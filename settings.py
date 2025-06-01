@@ -96,7 +96,7 @@ SPEED_ZONE_FAST_MULTIPLIER = 2.0  # Speed multiplier for fast zones
 
 # Food Magnet Effect Settings
 MAX_FOOD_MAGNETS = 1  # Maximum number of food magnets on screen
-FOOD_MAGNET_SPAWN_INTERVAL = 30.0  # Seconds between food magnet spawn attempts
+FOOD_MAGNET_SPAWN_INTERVAL = 20.0  # Seconds between food magnet spawn attempts
 FOOD_MAGNET_LIFETIME = 12.0  # Seconds before food magnet disappears
 FOOD_MAGNET_RADIUS = 40  # Visual radius of food magnet
 FOOD_MAGNET_PULL_RADIUS = 100  # Range at which food is affected
@@ -139,4 +139,15 @@ GROWTH_FOOD_SIZE_BONUS = 3  # Instant size increase
 SHRINK_FOOD_COLOR = (255, 20, 147)  # Deep pink
 SHRINK_FOOD_SIZE_REDUCTION = 2  # Size reduction amount
 SHRINK_FOOD_MIN_SIZE = 2  # Minimum size after shrinking
+
+# ===== SOUND EFFECTS SYSTEM =====
+# Enable/Disable sound effects
+ENABLE_SOUND_EFFECTS = True  # Master switch for all sound effects
+
+# Sound Volume Settings (0.0 to 1.0)
+MASTER_VOLUME = 0.5  # Overall volume multiplier
+FOOD_SOUND_VOLUME = 0.3  # Volume for food eating sounds
+DEATH_SOUND_VOLUME = 0.4  # Volume for death sounds
+EFFECT_SOUND_VOLUME = 0.3  # Volume for environmental effect sounds
+CREATURE_SOUND_VOLUME = 0.4  # Volume for creature sounds
 

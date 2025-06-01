@@ -29,10 +29,11 @@ class Snake:
         self.size = initial_length # Number of segments including head
         self.food_eaten = 0
         self.is_dead = False
-        
-        # Starvation tracking
+          # Starvation tracking
         self.last_food_time = time.time()  # Track when snake last ate food
         self.is_starving = False  # Visual indicator for starvation warning
+        self.starvation_warning_played = False  # Track if warning sound was played
+        self.starvation_critical_played = False  # Track if critical sound was played
         
         # Food effects and immunity
         self.is_immune = False  # Temporary immunity from hunters
@@ -139,7 +140,7 @@ class Snake:
         # Self-collision is disabled for now; always return False
         return False
 
-    def check_starvation(self):
+    def check_starvation(self, sound_manager=None):
         """Check if snake is starving and handle starvation death"""
         if self.is_dead or not ENABLE_STARVATION:
             return
@@ -149,14 +150,25 @@ class Snake:
         
         # Check if snake should die from starvation
         if time_since_food >= STARVATION_TIME:
+            # Play critical starvation sound before death
+            if sound_manager and not self.starvation_critical_played:
+                sound_manager.play_starvation_critical_sound()
+                self.starvation_critical_played = True
             self.die(reason="starvation")
             return
         
         # Check if snake is entering starvation warning state
         if time_since_food >= STARVATION_WARNING_TIME:
             self.is_starving = True
+            # Play warning sound when first entering starvation warning
+            if sound_manager and not self.starvation_warning_played:
+                sound_manager.play_starvation_warning_sound()
+                self.starvation_warning_played = True
         else:
+            # Reset starvation state and sound flags when no longer starving
             self.is_starving = False
+            self.starvation_warning_played = False
+            self.starvation_critical_played = False
 
     def die(self, reason="unknown"):
         if not self.is_dead:

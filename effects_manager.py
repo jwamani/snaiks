@@ -11,11 +11,14 @@ if ENABLE_EFFECTS:
 class EffectsManager:
     """Manages all environmental effects in the game"""
     
-    def __init__(self):
+    def __init__(self, sound_manager=None):
         # Effect lists - always initialize as lists, but only populate if enabled
         self.black_holes = []
         self.speed_zones = []
         self.food_magnets = []
+        
+        # Sound manager for playing effect sounds
+        self.sound_manager = sound_manager
         
         # Timing for effect spawning
         self.last_black_hole_spawn_time = time.time()
@@ -55,11 +58,13 @@ class EffectsManager:
             current_time - self.last_black_hole_spawn_time > BLACK_HOLE_SPAWN_INTERVAL):
             self._spawn_black_hole()
             self.last_black_hole_spawn_time = current_time
-        
-        # Update existing black holes and remove expired ones
+          # Update existing black holes and remove expired ones
         for black_hole in self.black_holes[:]:
             if black_hole.is_expired():
                 self.black_holes.remove(black_hole)
+                # Play effect expiration sound
+                if self.sound_manager:
+                    self.sound_manager.play_effect_expire_sound()
                 print(f"Black hole {black_hole.id} expired")
             else:
                 black_hole.update(snakes, food_items, creatures)
@@ -71,13 +76,15 @@ class EffectsManager:
             current_time - self.last_speed_zone_spawn_time > SPEED_ZONE_SPAWN_INTERVAL):
             self._spawn_speed_zone()
             self.last_speed_zone_spawn_time = current_time
-        
-        # Update existing speed zones and remove expired ones
+          # Update existing speed zones and remove expired ones
         for speed_zone in self.speed_zones[:]:
             if speed_zone.is_expired():
                 # Restore original speeds for affected entities
                 self._restore_entity_speeds(snakes, creatures)
                 self.speed_zones.remove(speed_zone)
+                # Play effect expiration sound
+                if self.sound_manager:
+                    self.sound_manager.play_effect_expire_sound()
                 print(f"Speed zone {speed_zone.id} expired")
             else:
                 speed_zone.update(snakes, food_items, creatures)
@@ -89,11 +96,13 @@ class EffectsManager:
             current_time - self.last_food_magnet_spawn_time > FOOD_MAGNET_SPAWN_INTERVAL):
             self._spawn_food_magnet()
             self.last_food_magnet_spawn_time = current_time
-        
-        # Update existing food magnets and remove expired ones
+          # Update existing food magnets and remove expired ones
         for food_magnet in self.food_magnets[:]:
             if food_magnet.is_expired():
                 self.food_magnets.remove(food_magnet)
+                # Play effect expiration sound
+                if self.sound_manager:
+                    self.sound_manager.play_effect_expire_sound()
                 print(f"Food magnet {food_magnet.id} expired")
             else:
                 food_magnet.update(snakes, food_items, creatures)
@@ -115,10 +124,12 @@ class EffectsManager:
                 if distance < BLACK_HOLE_MIN_DISTANCE:
                     position_valid = False
                     break
-            
             if position_valid:
                 new_black_hole = BlackHoleEffect(x, y)
                 self.black_holes.append(new_black_hole)
+                # Play black hole spawn sound
+                if self.sound_manager:
+                    self.sound_manager.play_black_hole_spawn_sound()
                 print(f"Black hole {new_black_hole.id} spawned at ({x}, {y})")
                 return
         
@@ -135,9 +146,10 @@ class EffectsManager:
         
         # Randomly choose between fast and slow zone
         is_fast_zone = random.choice([True, False])
-        
         new_speed_zone = SpeedZoneEffect(x, y, is_fast_zone)
-        self.speed_zones.append(new_speed_zone)
+        self.speed_zones.append(new_speed_zone)        # Play zone spawn sound
+        if self.sound_manager:
+            self.sound_manager.play_speed_zone_spawn_sound()
         zone_type = "speed boost" if is_fast_zone else "slow"
         print(f"Speed zone {new_speed_zone.id} ({zone_type}) spawned at ({x}, {y})")
 
@@ -149,9 +161,11 @@ class EffectsManager:
         # Generate random spawn position
         x = random.randint(FOOD_MAGNET_RADIUS + 40, SCREEN_WIDTH - FOOD_MAGNET_RADIUS - 40)
         y = random.randint(FOOD_MAGNET_RADIUS + 40, SCREEN_HEIGHT - FOOD_MAGNET_RADIUS - 40)
-        
         new_food_magnet = FoodMagnetEffect(x, y)
         self.food_magnets.append(new_food_magnet)
+        # Play food magnet spawn sound
+        if self.sound_manager:
+            self.sound_manager.play_food_magnet_attract_sound()
         print(f"Food magnet {new_food_magnet.id} spawned at ({x}, {y})")
 
     def _restore_entity_speeds(self, snakes, creatures):

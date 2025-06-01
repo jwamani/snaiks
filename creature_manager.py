@@ -13,11 +13,14 @@ if ENABLE_SCAVENGERS:
 class CreatureManager:
     """Manages all non-snake creatures in the game"""
     
-    def __init__(self):
+    def __init__(self, sound_manager=None):
         # Creature lists - always initialize as lists, but only populate if enabled
         self.rippers = []
         self.scavengers = []
         self.guardians = []
+        
+        # Sound manager for playing creature sounds
+        self.sound_manager = sound_manager
         
         # Timing for creature spawning
         self.last_ripper_check_time = time.time()
@@ -65,19 +68,23 @@ class CreatureManager:
                 self.rippers.remove(ripper)
             else:
                 ripper.update(hunters)
-                
-                # Check for ripper-hunter collisions
+                  # Check for ripper-hunter collisions
                 for hunter in hunters[:]:
                     if ripper.check_collision_with_hunter(hunter):
                         hunter.die(reason="killed by ripper")
+                        # Play ripper kill sound
+                        if self.sound_manager:
+                            self.sound_manager.play_ripper_kill_hunter_sound()
                         print(f"Ripper {ripper.id} eliminated hunter snake")
-        
-        # Remove rippers if hunter population drops significantly
+          # Remove rippers if hunter population drops significantly
         if hunter_percentage < HUNTER_POPULATION_THRESHOLD * 0.7:  # 70% of threshold
             for ripper in self.rippers[:]:
                 if hasattr(ripper, 'despawn_timer'):
                     if current_time - ripper.despawn_timer > RIPPER_DESPAWN_DELAY:
                         ripper.die("hunter population decreased")
+                        # Play creature despawn sound
+                        if self.sound_manager:
+                            self.sound_manager.play_creature_despawn_sound()
                         self.rippers.remove(ripper)
                 else:
                     ripper.despawn_timer = current_time
@@ -90,10 +97,12 @@ class CreatureManager:
             current_time - self.last_scavenger_check_time > SCAVENGER_SPAWN_INTERVAL):
             self._spawn_scavenger()
             self.last_scavenger_check_time = current_time
-        
-        # Update scavengers and handle food competition
+          # Update scavengers and handle food competition
         for scavenger in self.scavengers[:]:
             if scavenger.is_dead:
+                # Play creature despawn sound when scavenger dies
+                if self.sound_manager:
+                    self.sound_manager.play_creature_despawn_sound()
                 self.scavengers.remove(scavenger)
             else:
                 scavenger.update(food_items)
@@ -103,6 +112,9 @@ class CreatureManager:
                     if scavenger.check_collision_with_food(food):
                         scavenger.eat_food()
                         food_items.remove(food)  # Scavenger steals the food
+                        # Play food stealing sound using the food magnet attract sound as it's closest
+                        if self.sound_manager:
+                            self.sound_manager.play_food_magnet_attract_sound()
                         print(f"Scavenger {scavenger.id} stole food from snakes!")
 
     def _update_guardians(self, snakes, current_time):

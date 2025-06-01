@@ -11,6 +11,7 @@ from basic_behavior import BasicBehavior
 from resource_manager import ResourceManager
 from creature_manager import CreatureManager
 from effects_manager import EffectsManager
+from sound_manager import SoundManager
 
 class GameManager:
     def __init__(self):
@@ -21,15 +22,17 @@ class GameManager:
         self.winner = None
         self.last_food_spawn_time = time.time()
         self.last_snake_spawn_time = time.time()
-        
         # Resource management
         self.resource_manager = ResourceManager()
         
+        # Sound effects management
+        self.sound_manager = SoundManager()
+        
         # Creature management - modular system
-        self.creature_manager = CreatureManager()
+        self.creature_manager = CreatureManager(self.sound_manager)
         
         # Environmental effects management
-        self.effects_manager = EffectsManager()
+        self.effects_manager = EffectsManager(self.sound_manager)
         
         # Food effects management for special food
         self.food_effects_manager = FoodEffectsManager()
@@ -44,14 +47,13 @@ class GameManager:
     def update(self):
         """Update game state, including snakes and food."""
         self.resource_manager.start_frame()
-        
         # Update snakes with AI behavior
         for snake in self.snakes[:]:  # Use slice copy to allow safe removal
             if snake.is_dead:
                 continue
                 
-            # Check starvation status for each snake
-            snake.check_starvation()
+            # Check starvation status for each snake with sound effects
+            snake.check_starvation(self.sound_manager)
             
             # Skip further processing if snake died from starvation
             if snake.is_dead:
@@ -140,17 +142,19 @@ class GameManager:
                 # Hunter can eat smaller snakes
                 if (prey.size < hunter.size - FEAR_MARGIN and
                     hunter.head_position.distance_to(prey.head_position) < SNAKE_SEGMENT_RADIUS * 2):
-                    
                     # Hunter grows by 1/3 of prey's size
                     growth_amount = max(1, prey.size // 3)
                     hunter.grow(growth_amount, reason="ate snake")
                     prey.die(reason="eaten by hunter")
                     break  # Hunter can only eat one snake per frame
-
+    
     def spawn_food(self):
         """Spawn a new food item using the special food creation system."""
         food = create_food()  # Use the special food factory function
         self.food_items.append(food)
+        
+        # Play food spawn sound effect
+        # self.sound_manager.play_food_spawn_sound()
     
     def spawn_initial_food(self):
         """Spawn initial food items to populate the screen"""
@@ -201,6 +205,9 @@ class GameManager:
             new_snake.move(direction)
 
         self.snakes.append(new_snake)
+        
+        # Play snake spawn sound effect
+        # self.sound_manager.play_snake_spawn_sound()
     
     def cleanup_dead_snakes(self):
         """Remove dead snakes that have been dead for a while"""
