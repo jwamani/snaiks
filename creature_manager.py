@@ -79,12 +79,13 @@ class CreatureManager:
           # Remove rippers if hunter population drops significantly
         if hunter_percentage < HUNTER_POPULATION_THRESHOLD * 0.7:  # 70% of threshold
             for ripper in self.rippers[:]:
-                if hasattr(ripper, 'despawn_timer'):
-                    if current_time - ripper.despawn_timer > RIPPER_DESPAWN_DELAY:
+                if hasattr(ripper, 'despawn_timer'):                    
+                    if current_time - ripper.despawn_timer > RIPPER_DESPAWN_DELAY:                        
                         ripper.die("hunter population decreased")
-                        # Play creature despawn sound
-                        if self.sound_manager:
-                            self.sound_manager.play_creature_despawn_sound()
+
+                        # Sound removed for streamlined audio experience
+                        # if self.sound_manager:
+                        #     self.sound_manager.play_creature_despawn_sound()
                         self.rippers.remove(ripper)
                 else:
                     ripper.despawn_timer = current_time
@@ -97,24 +98,24 @@ class CreatureManager:
             current_time - self.last_scavenger_check_time > SCAVENGER_SPAWN_INTERVAL):
             self._spawn_scavenger()
             self.last_scavenger_check_time = current_time
-          # Update scavengers and handle food competition
+          
+        # Update scavengers and handle food competition        
         for scavenger in self.scavengers[:]:
             if scavenger.is_dead:
-                # Play creature despawn sound when scavenger dies
-                if self.sound_manager:
-                    self.sound_manager.play_creature_despawn_sound()
+                # Sound removed for streamlined audio experience
+                # if self.sound_manager:
+                #     self.sound_manager.play_creature_despawn_sound()
                 self.scavengers.remove(scavenger)
             else:
                 scavenger.update(food_items)
-                
-                # Check for scavenger-food collisions
+                  # Check for scavenger-food collisions
                 for food in food_items[:]:
                     if scavenger.check_collision_with_food(food):
                         scavenger.eat_food()
                         food_items.remove(food)  # Scavenger steals the food
-                        # Play food stealing sound using the food magnet attract sound as it's closest
-                        if self.sound_manager:
-                            self.sound_manager.play_food_magnet_attract_sound()
+                        # Sound removed for streamlined audio experience
+                        # if self.sound_manager:
+                        #     self.sound_manager.play_food_magnet_attract_sound()
                         print(f"Scavenger {scavenger.id} stole food from snakes!")
 
     def _update_guardians(self, snakes, current_time):

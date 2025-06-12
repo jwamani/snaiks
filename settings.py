@@ -1,8 +1,8 @@
 # settings.py: Game constants
 
 # Screen dimensions
-SCREEN_WIDTH = 1000
-SCREEN_HEIGHT = 800
+SCREEN_WIDTH = 1400  # Enlarged to accommodate enhanced UI panel
+SCREEN_HEIGHT = 850  # Increased height for better visibility
 
 # Colors
 BG_COLOR = (20, 30, 40) # Dark grayish blue
@@ -76,6 +76,7 @@ ENABLE_EFFECTS = True  # Master switch for all environmental effects
 ENABLE_BLACK_HOLES = True  # Enable Black Hole effects that pull entities
 ENABLE_SPEED_ZONES = True  # Enable zones that modify movement speed
 ENABLE_FOOD_MAGNETS = True  # Enable zones that attract food items
+ENABLE_POISON_ZONES = True  # Enable poison zones that damage entities
 
 # Black Hole Effect Settings
 MAX_BLACK_HOLES = 2  # Maximum number of black holes on screen
@@ -101,6 +102,16 @@ FOOD_MAGNET_LIFETIME = 12.0  # Seconds before food magnet disappears
 FOOD_MAGNET_RADIUS = 40  # Visual radius of food magnet
 FOOD_MAGNET_PULL_RADIUS = 100  # Range at which food is affected
 FOOD_MAGNET_PULL_STRENGTH = 2.0  # How strong the food attraction is
+
+# Poison Zone Effect Settings
+MAX_POISON_ZONES = 2  # Maximum number of poison zones on screen
+POISON_ZONE_SPAWN_INTERVAL = 30.0  # Seconds between poison zone spawn attempts
+POISON_ZONE_LIFETIME = 45.0  # Seconds before poison zone disappears
+POISON_ZONE_RADIUS = 70  # Radius of poison zone effect
+POISON_ZONE_DAMAGE_RATE = 1.0  # HP damage per second while inside
+POISON_ZONE_LINGERING_DURATION = 3.0  # Seconds of lingering poison after leaving
+POISON_ZONE_WIND_SPEED = 15.0  # Pixels per second drift speed
+POISON_ZONE_PULSE_SPEED = 0.1  # Visual pulsing animation speed
 
 # ===== SPECIAL FOOD SYSTEM =====
 # Enable/Disable switches for different food types

@@ -212,15 +212,24 @@ Snakes use **Decision Tree Classifiers** trained on gameplay data to make intell
 
 ### Input Features
 
-| Feature                 | Description                              |
-| ----------------------- | ---------------------------------------- |
-| Current Direction       | Snake's movement vector (x,y)            |
-| Food Distance/Direction | Vector to nearest food item              |
-| Wall Distances          | Distance to each screen boundary         |
-| Self-Collision Risk     | Distance to own body segments            |
-| Hunter Proximity        | Distance and direction to nearest hunter |
-| Size Comparison         | Relative size vs nearby threats/prey     |
-| Environmental Effects   | Active zone effects and hazards          |
+| Feature                 | Description                                              |
+| ----------------------- | -------------------------------------------------------- |
+| Current Direction       | Snake's movement vector (x,y)                            |
+| Food Distance/Direction | Vector to nearest food item                              |
+| Wall Distances          | Distance to each screen boundary                         |
+| Self-Collision Risk     | Distance to own body segments                            |
+| Hunter Proximity        | Distance and direction to nearest hunter                 |
+| Size Comparison         | Relative size vs nearby threats/prey                     |
+| Environmental Effects   | Active zone effects and hazards                          |
+| **Poison Zone Data**    | **Locations, drift vectors, and danger levels**          |
+| **Territory Status**    | **Ownership, conflicts, and resource values**            |
+| **Energy Level**        | **Current stamina and regeneration rate**                |
+| **Health Status**       | **HP, damage sources, and healing opportunities**        |
+| **Disaster Warnings**   | **Incoming environmental threats and shelter locations** |
+| **Aerial Threats**      | **Sky predator positions and attack patterns**           |
+| **Alliance Data**       | **Pack member locations and trust levels**               |
+| **Resource Scarcity**   | **Food availability and competition intensity**          |
+| **Stealth Status**      | **Camouflage availability and visibility levels**        |
 
 ### Decision Tree Logic
 
@@ -606,3 +615,168 @@ Training data is organized in the `/training` directory:
 - Occasional position errors when snakes wrap around screen edges
 - Performance degradation with large numbers of snakes
 - Training data quality depends on the diversity of gameplay scenarios
+
+---
+
+## ⚡ Advanced Survival Features
+
+### Poison Zones System
+
+- **Appearance**: Purple-green swirling toxic areas with warning borders
+- **Movement**: Zones slowly drift across the map following wind patterns
+- **Damage**: 1 HP per second while inside, with 3-second lingering poison effect
+- **Strategy Impact**: Forces dynamic pathfinding and risk assessment
+- **AI Challenge**: Learn to predict movement patterns and plan safe routes
+
+### Territory System
+
+- **Claimable Areas**: High-value zones near consistent food spawns or shelter
+- **Defense Mechanics**: Snakes can actively defend territories from intruders
+- **Territory Benefits**:
+  - 25% faster food spawning in owned territory
+  - Energy regeneration bonus while in claimed area
+  - Priority access to shelter during disasters
+- **Conflict Resolution**: Territorial disputes resolved through size-based dominance or energy investment
+- **AI Learning**: Develop strategic positioning, resource allocation, and conflict management
+
+### Energy Management System
+
+- **Energy Pool**: All creatures have stamina separate from hunger
+- **Consumption Rate**:
+  - Movement: 0.1 energy per second
+  - Fighting: 2 energy per conflict action
+  - Sprinting: 0.3 energy per second (2x speed boost)
+- **Regeneration**: 0.05 energy per second while stationary, 0.1 in owned territory
+- **Low Energy Effects**: Slower movement, reduced turning ability, vulnerability
+- **Strategic Depth**: Balance activity vs conservation, plan energy for emergencies
+
+### Environmental Disaster System
+
+#### Acid Rain Events
+
+- **Duration**: 30 seconds of map-wide danger
+- **Effect**: 2 HP damage per second to exposed creatures
+- **Shelter**: Rock formations and cave entrances provide protection
+- **Warning**: 10-second advance notice with visual/audio alerts
+- **Frequency**: Every 2-3 minutes with seasonal variation
+
+#### Ice Storm Events
+
+- **Duration**: 45 seconds of reduced control
+- **Effect**: 50% slower movement, 25% reduced turning ability
+- **Protection**: Shelter areas or staying near heat sources (lava zones)
+- **Tactical Impact**: Vulnerable period requiring defensive positioning
+
+#### Heat Wave Events
+
+- **Duration**: 60 seconds of energy drain
+- **Effect**: Double energy consumption rate
+- **Cooling**: Water sources or ice zones provide relief
+- **Strategic Response**: Pre-positioning near cooling areas
+
+### Aerial Predator System
+
+#### Sky Hunters (Hawks)
+
+- **Appearance**: Large bird silhouettes casting moving shadows
+- **Attack Pattern**: Sudden swooping attacks from random directions
+- **Target Selection**: Prioritize isolated snakes, especially smaller ones
+- **Warning Signs**: Shadow movement across ground, bird calls
+- **Evasion**: Rapid direction changes, shelter usage, group formations
+- **Spawn Frequency**: 1-2 hawks active during daylight periods
+
+### Pack Alliance Mechanics
+
+#### Temporary Alliances
+
+- **Formation**: Snakes can form 2-4 member packs through proximity signaling
+- **Benefits**:
+  - Shared territory defense
+  - Coordinated hunting strategies
+  - Protection from aerial predators
+  - Information sharing about threats
+- **Betrayal System**: Alliance members can betray for personal gain
+- **Trust Decay**: Alliances weaken over time without mutual benefit
+- **AI Complexity**: Learn cooperation, trust assessment, betrayal timing
+
+### Resource Scarcity Periods
+
+#### Famine Events
+
+- **Trigger**: Periodic ecological pressures
+- **Duration**: 2-4 minutes of reduced food spawning
+- **Severity**: 70% reduction in normal food availability
+- **Competition**: Intense rivalry for remaining resources
+- **Survival Strategy**: Energy conservation, territorial control, alliance formation
+
+#### Abundance Cycles
+
+- **Trigger**: Recovery periods after famines
+- **Effect**: 150% normal food spawning for recovery
+- **Opportunity**: Rapid growth and territory expansion
+- **Strategic Timing**: Optimal moments for aggressive expansion
+
+### Advanced Health System
+
+#### Health Points
+
+- **Maximum HP**: 10 HP for all creatures
+- **Damage Sources**:
+  - Poison zones: 1 HP/second
+  - Disaster exposure: 2 HP/second
+  - Aerial attacks: 3 HP per hit
+  - Combat damage: 2 HP per engagement
+- **Healing**:
+  - Natural regeneration: 0.1 HP/second in safe zones
+  - Special healing food: +3 HP instant restoration
+  - Shelter rest: 0.2 HP/second during disasters
+
+### Camouflage & Stealth System
+
+#### Stealth Mechanics
+
+- **Activation**: Special camouflage food grants 15-second partial invisibility
+- **Visibility**: 30% opacity, making detection difficult but not impossible
+- **Movement Limitation**: Stealth breaks with rapid movement or attacking
+- **Strategic Use**: Ambush hunting, predator evasion, territory infiltration
+- **AI Challenge**: Learn optimal stealth timing and movement patterns
+
+---
+
+## 🎯 Survival AI Challenges
+
+These advanced features create unprecedented learning complexity for AI agents:
+
+### Multi-System Decision Making
+
+- **Spatial Intelligence**: Territory mapping, poison zone tracking, shelter location memory
+- **Resource Management**: Energy allocation, health preservation, territory investment
+- **Social Strategy**: Alliance formation, trust assessment, betrayal timing
+- **Risk Assessment**: Disaster preparation, predator evasion, exposure minimization
+- **Dynamic Adaptation**: Real-time strategy updates for changing environment
+
+### Enhanced Input Features for AI
+
+The advanced systems add these new sensory inputs for machine learning:
+
+| Feature Category | New AI Inputs                                                     |
+| ---------------- | ----------------------------------------------------------------- |
+| Environmental    | Poison zone locations and drift vectors, disaster warning levels  |
+| Territorial      | Territory ownership status, conflict zones, resource value maps   |
+| Physiological    | Current energy/stamina, health status, healing opportunities      |
+| Social           | Alliance member locations, trust levels, betrayal risk assessment |
+| Aerial Threats   | Sky predator positions, shadow movement, attack probability       |
+| Resource Status  | Scarcity levels, abundance zones, competition intensity           |
+
+### Emergent Survival Behaviors
+
+Through machine learning, snakes develop complex survival strategies:
+
+1. **Environmental Mastery**: Predictive disaster preparation and shelter optimization
+2. **Territorial Intelligence**: Strategic location control and resource monopolization
+3. **Energy Economics**: Optimal effort allocation across survival activities
+4. **Social Manipulation**: Alliance formation with calculated betrayal timing
+5. **Threat Prioritization**: Dynamic danger assessment and response prioritization
+6. **Survival Networking**: Information sharing and cooperative territory defense
+
+These features transform SNAIKS into one of the most challenging AI survival environments, where only the most adaptable and intelligent agents achieve long-term survival.

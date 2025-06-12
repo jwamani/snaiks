@@ -25,18 +25,29 @@ class Snake:
         self.velocity = Vector2(0, 0) # Current velocity
         self.max_speed = BASE_MAX_SPEED
         self.acceleration_rate = BASE_ACCELERATION
-
+        
         self.size = initial_length # Number of segments including head
         self.food_eaten = 0
         self.is_dead = False
-          # Starvation tracking
+        
+        # Health System - Foundational survival mechanic
+        self.max_hp = 10  # Maximum health points
+        self.hp = self.max_hp  # Current health points
+        self.last_damage_time = 0  # Track when last damage was taken
+        self.damage_source = None  # Track source of last damage
+        self.healing_rate = 0.2  # HP per second natural regeneration (increased for better balance)
+        self.last_heal_time = time.time()  # Track healing timing
+        
+        # Starvation tracking
         self.last_food_time = time.time()  # Track when snake last ate food
         self.is_starving = False  # Visual indicator for starvation warning
         self.starvation_warning_played = False  # Track if warning sound was played
         self.starvation_critical_played = False  # Track if critical sound was played
         
-        # Food effects and immunity
-        self.is_immune = False  # Temporary immunity from hunters
+        # Poison effects tracking
+        self.is_poisoned = False  # Visual indicator for being in poison zone
+        self.poison_intensity = 0.0  # Intensity of poison effect for visuals
+
         self.recent_growth_time = 0  # Track recent growth for visual effect
         self.recent_shrink_time = 0  # Track recent shrinking for visual effect
 
@@ -173,9 +184,137 @@ class Snake:
     def die(self, reason="unknown"):
         if not self.is_dead:
             self.is_dead = True
+            self.hp = 0  # Set HP to 0 when dead
             self.death_time = time.time()  # Track when snake died
             self.body_color = DEAD_SNAKE_COLOR
             self.head_color = DEAD_SNAKE_COLOR
+
+    def take_damage(self, amount, source="unknown", sound_manager=None):
+        """Apply damage to the snake and handle death if HP reaches 0"""
+        if self.is_dead:
+            return False
+        
+        self.hp = max(0, self.hp - amount)
+        self.last_damage_time = time.time()
+        self.damage_source = source
+        
+        # Play appropriate damage sound
+        if sound_manager and amount > 0:
+            if source == "poison":
+                sound_manager.play_sound("poison_damage", volume=0.2)
+            elif source == "disaster":
+                sound_manager.play_sound("disaster_damage", volume=0.3)
+            elif source == "aerial_attack":
+                sound_manager.play_sound("aerial_damage", volume=0.4)
+            elif source == "combat":
+                sound_manager.play_sound("combat_damage", volume=0.3)
+        
+        # Check if snake dies from damage
+        if self.hp <= 0:
+            self.die(reason=f"killed by {source}")
+            return True  # Snake died
+        
+        return False  # Snake survived
+    
+    def heal(self, amount, source="natural"):
+        """Heal the snake by specified amount, up to max HP"""
+        if self.is_dead:
+            return 0
+        
+        old_hp = self.hp
+        self.hp = min(self.max_hp, self.hp + amount)
+        actual_healing = self.hp - old_hp
+        
+        if actual_healing > 0:
+            self.last_heal_time = time.time()
+            
+        return actual_healing
+    
+    def update_health_regeneration(self, in_safe_zone=False, in_territory=False):
+        """Handle natural health regeneration based on environment"""
+        if self.is_dead or self.hp >= self.max_hp:
+            return
+        
+        current_time = time.time()
+        time_since_last_heal = current_time - self.last_heal_time
+        
+        # Calculate regeneration rate based on environment
+        regen_rate = self.healing_rate
+        if in_safe_zone:
+            regen_rate *= 2  # Double healing in safe zones
+        if in_territory:
+            regen_rate *= 1.5  # Bonus healing in owned territory
+        
+        # Apply regeneration every second
+        if time_since_last_heal >= 1.0:
+            healing_amount = regen_rate * time_since_last_heal
+            self.heal(healing_amount, source="regeneration")
+    
+    def update_poison_effects(self):
+        """Update poison visual effects and decay over time"""
+        if self.is_poisoned:
+            # Decay poison intensity over time
+            self.poison_intensity = max(0.0, self.poison_intensity - 0.02)  # Decay rate
+            if self.poison_intensity <= 0.0:
+                self.is_poisoned = False
+
+    def get_health_percentage(self):
+        """Get current health as a percentage of max health"""
+        if self.max_hp <= 0:
+            return 0
+        return (self.hp / self.max_hp) * 100
+    
+    def is_critically_injured(self):
+        """Check if snake is in critical health condition (< 30% HP)"""
+        return self.get_health_percentage() < 30
+    
+    def is_heavily_injured(self):
+        """Check if snake is heavily injured (< 50% HP)"""
+        return self.get_health_percentage() < 50
+    
+    def get_health_status(self):
+        """Get descriptive health status"""
+        percentage = self.get_health_percentage()
+        if percentage >= 80:
+            return "healthy"
+        elif percentage >= 50:
+            return "lightly_injured"
+        elif percentage >= 30:
+            return "heavily_injured"
+        else:
+            return "critically_injured"
+    def apply_environmental_damage(self, damage_type, damage_amount, sound_manager=None):
+        """Apply damage from environmental sources"""
+        if self.is_dead:
+            return False
+          # Different environmental damage types
+        if damage_type == "poison":
+            self.is_poisoned = True  # Set poison visual effect
+            self.poison_intensity = min(1.0, self.poison_intensity + 0.1)  # Increase intensity
+            return self.take_damage(damage_amount, "poison", sound_manager)  # Use actual damage amount
+        elif damage_type == "acid_rain":
+            return self.take_damage(2, "disaster", sound_manager)  # 2 HP per second in acid rain
+        elif damage_type == "ice_storm":
+            return self.take_damage(0.5, "disaster", sound_manager)  # Slower damage from ice
+        elif damage_type == "heat_wave":
+            return self.take_damage(0.5, "disaster", sound_manager)  # Heat damage
+        elif damage_type == "aerial_attack":
+            return self.take_damage(3, "aerial_attack", sound_manager)  # 3 HP from hawk attacks
+        else:
+            return self.take_damage(damage_amount, damage_type, sound_manager)
+    
+    def consume_health_food(self, sound_manager=None):
+        """Special healing when consuming health food"""
+        if self.is_dead:
+            return 0
+        
+        healing_amount = 3  # Health food provides 3 HP instant restoration
+        actual_healing = self.heal(healing_amount, source="health_food")
+        
+        if sound_manager and actual_healing > 0:
+            sound_manager.play_sound("health_food_consumed", volume=0.3)
+        
+        return actual_healing
 
     def draw(self, screen, active_effects=None):
         if self.is_dead and len(self.body_segments) == 0: # Don't draw if truly gone
@@ -188,7 +327,7 @@ class Snake:
         for segment_pos in reversed(self.body_segments):
             # If dead, draw all segments in dead color
             if self.is_dead:
-                color_to_use = DEAD_SNAKE_COLOR
+                color_to_use = DEAD_SNAKE_COLOR           
             elif self.is_starving:
                 # Starving snakes get a pulsing orange/yellow color
                 pulse = int(128 + 127 * math.sin(time.time() * 8))  # Fast pulsing
@@ -199,24 +338,36 @@ class Snake:
             else:
                 # Check for active food effects and modify color accordingly
                 color_to_use = self.body_color
-                for effect in effects:
-                    if effect.effect_type == "speed_boost":
-                        # Cyan tint for speed boost
-                        boost_pulse = int(50 + 50 * math.sin(time.time() * 12))
-                        color_to_use = (
-                            max(0, min(255, self.body_color[0] + boost_pulse)),
-                            max(0, min(255, self.body_color[1] + boost_pulse)),
-                            max(0, min(255, self.body_color[2] + 100 + boost_pulse))
-                        )
-                        break
-                    elif effect.effect_type == "slow":
-                        # Purple tint for slow effect
-                        color_to_use = (
-                            max(0, min(255, self.body_color[0] + 50)),
-                            max(0, min(255, self.body_color[1] - 50)),
-                            max(0, min(255, self.body_color[2] + 80))
-                        )
-                        break
+                
+                # Apply poison visual effect if poisoned
+                if self.is_poisoned:
+                    # Green toxic tint with pulsing effect
+                    poison_pulse = int(100 + 100 * math.sin(time.time() * 6) * self.poison_intensity)
+                    color_to_use = (
+                        max(0, min(255, self.body_color[0] - 30)),
+                        max(0, min(255, self.body_color[1] + poison_pulse)),
+                        max(0, min(255, self.body_color[2] - 20))
+                    )
+                else:
+                    # Check for active food effects
+                    for effect in effects:
+                        if effect.effect_type == "speed_boost":
+                            # Cyan tint for speed boost
+                            boost_pulse = int(50 + 50 * math.sin(time.time() * 12))
+                            color_to_use = (
+                                max(0, min(255, self.body_color[0] + boost_pulse)),
+                                max(0, min(255, self.body_color[1] + boost_pulse)),
+                                max(0, min(255, self.body_color[2] + 100 + boost_pulse))
+                            )
+                            break
+                        elif effect.effect_type == "slow":
+                            # Purple tint for slow effect
+                            color_to_use = (
+                                max(0, min(255, self.body_color[0] + 50)),
+                                max(0, min(255, self.body_color[1] - 50)),
+                                max(0, min(255, self.body_color[2] + 80))
+                            )
+                            break
                 
             pygame.draw.circle(screen, color_to_use, (int(segment_pos.x), int(segment_pos.y)), SNAKE_SEGMENT_RADIUS)
             # Inner circle for detail
@@ -301,4 +452,46 @@ class Snake:
                 pygame.draw.circle(screen, (255,255,255), (int(eye1_pos.x), int(eye1_pos.y)), int(eye_radius))
                 pygame.draw.circle(screen, (255,255,255), (int(eye2_pos.x), int(eye2_pos.y)), int(eye_radius))
                 pygame.draw.circle(screen, (0,0,0), (int(eye1_pos.x), int(eye1_pos.y)), int(pupil_radius))
-                pygame.draw.circle(screen, (0,0,0), (int(eye2_pos.x), int(eye2_pos.y)), int(pupil_radius))
+                pygame.draw.circle(screen, (0,0,0), (int(eye2_pos.x), int(eye2_pos.y)), int(pupil_radius))            # Draw health bar above snake head if not at full health or dead
+            if not self.is_dead and self.hp < self.max_hp:
+                health_bar_width = SNAKE_SEGMENT_RADIUS * 4  # Made wider
+                health_bar_height = 6  # Made taller
+                health_bar_x = head_draw_pos.x - health_bar_width // 2
+                health_bar_y = head_draw_pos.y - SNAKE_SEGMENT_RADIUS - 15  # Moved further up
+                
+                # Background (dark red)
+                pygame.draw.rect(screen, (80, 0, 0), 
+                               (health_bar_x, health_bar_y, health_bar_width, health_bar_height))
+                
+                # Health bar (green to red gradient based on health)
+                health_percentage = self.get_health_percentage()
+                current_health_width = int((health_percentage / 100) * health_bar_width)
+                
+                if health_percentage > 60:
+                    health_color = (0, 255, 0)  # Green
+                elif health_percentage > 30:
+                    health_color = (255, 255, 0)  # Yellow
+                else:
+                    health_color = (255, 0, 0)  # Red
+                    
+                if current_health_width > 0:
+                    pygame.draw.rect(screen, health_color,
+                                   (health_bar_x, health_bar_y, current_health_width, health_bar_height))
+                
+                # Health bar border (white for visibility)
+                pygame.draw.rect(screen, (255, 255, 255),
+                               (health_bar_x - 1, health_bar_y - 1, health_bar_width + 2, health_bar_height + 2), 1)
+                
+                # Debug: HP text above health bar
+                hp_text = f"{self.hp:.1f}/{self.max_hp}"
+                if hasattr(self, '_debug_font'):
+                    font = self._debug_font
+                else:
+                    font = pygame.font.Font(None, 16)
+                    self._debug_font = font
+                    
+                text_surface = font.render(hp_text, True, (255, 255, 255))
+                text_rect = text_surface.get_rect()
+                text_rect.centerx = head_draw_pos.x
+                text_rect.bottom = health_bar_y - 2
+                screen.blit(text_surface, text_rect)

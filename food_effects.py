@@ -120,20 +120,10 @@ class FoodEffectsManager:
             print(f"Snake {snake_id} grew by {GROWTH_FOOD_SIZE_BONUS} segments from growth food!")
             return
             
-        elif food_type == "shrink" and ENABLE_SHRINK_FOOD:
-            # Instant effect - no duration needed
-            old_size = snake.size
-            snake.size = max(SHRINK_FOOD_MIN_SIZE, snake.size - SHRINK_FOOD_SIZE_REDUCTION)
-            
-            # Adjust body segments if snake shrunk
-            if snake.size < old_size:
-                segments_to_remove = old_size - snake.size
-                for _ in range(segments_to_remove):
-                    if len(snake.body_segments) > snake.size:
-                        snake.body_segments.pop()
-                        
-                snake.update_dynamic_properties()
-                print(f"Snake {snake_id} shrunk from {old_size} to {snake.size} segments!")
+        elif food_type == "health":
+            # Instant healing effect - no duration needed  
+            healing_amount = snake.consume_health_food()
+            print(f"Snake {snake_id} healed for {healing_amount} HP! Current HP: {snake.hp}/{snake.max_hp}")
             return
             
         # Add effect to snake if it was created

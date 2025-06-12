@@ -34,8 +34,7 @@ class Food:
         elif self.food_type == "immunity":
             self.color = IMMUNITY_FOOD_COLOR
             self.effect_description = f"Immunity from hunters for {IMMUNITY_FOOD_DURATION}s"
-            
-        elif self.food_type == "growth":
+              elif self.food_type == "growth":
             self.color = GROWTH_FOOD_COLOR
             self.effect_description = f"Instant growth +{GROWTH_FOOD_SIZE_BONUS} segments"
             
@@ -165,8 +164,7 @@ def create_food(force_type=None):
         if ENABLE_SPEED_FOOD:
             available_types.append("speed")
         if ENABLE_SLOW_FOOD:
-            available_types.append("slow")
-        if ENABLE_IMMUNITY_FOOD:
+            available_types.append("slow")        if ENABLE_IMMUNITY_FOOD:
             available_types.append("immunity")
         if ENABLE_GROWTH_FOOD:
             available_types.append("growth")
@@ -182,3 +180,5 @@ def create_food(force_type=None):
     
     # Default to normal food
     return Food("normal")
+
+

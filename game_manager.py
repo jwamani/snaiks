@@ -28,6 +28,10 @@ class GameManager:
         # Sound effects management
         self.sound_manager = SoundManager()
         
+        # Enhanced UI management
+        from ui_enhancements import UIManager
+        self.ui_manager = UIManager(SCREEN_WIDTH, SCREEN_HEIGHT)
+        
         # Creature management - modular system
         self.creature_manager = CreatureManager(self.sound_manager)
         
@@ -91,9 +95,22 @@ class GameManager:
         
         # Update creatures using the modular creature manager
         self.creature_manager.update(self.snakes, self.food_items)
-        
-        # Update food effects on snakes
+          # Update food effects on snakes
         self.food_effects_manager.update_effects(self.snakes)
+          # Update health regeneration for all snakes
+        for snake in self.snakes:
+            if not snake.is_dead:
+                # TODO: Check if snake is in safe zone or territory when those systems are implemented
+                snake.update_health_regeneration(in_safe_zone=False, in_territory=False)
+                snake.update_poison_effects()  # Update poison visual effects
+                
+                # TEMPORARY: Test damage system - ENABLED for health bar testing
+                # Comment out the next 5 lines to disable test damage for normal gameplay
+                # if random.random() < 0.002:  # 0.2% chance per frame (~1 damage every 8-10 seconds)
+                #     damage_types = ["poison", "disaster", "aerial_attack"]
+                #     damage_type = random.choice(damage_types)
+                #     snake.apply_environmental_damage(damage_type, 1, self.sound_manager)
+                #     print(f"Snake {snake.id[:4]} took {damage_type} damage! HP: {snake.hp}/{snake.max_hp}")
         
         # Update environmental effects
         self.effects_manager.update(self.snakes, self.food_items, self.creature_manager)
@@ -142,10 +159,6 @@ class GameManager:
                 # Hunter can eat smaller snakes
                 if (prey.size < hunter.size - FEAR_MARGIN and
                     hunter.head_position.distance_to(prey.head_position) < SNAKE_SEGMENT_RADIUS * 2):
-                    # Hunter grows by 1/3 of prey's size
-                    growth_amount = max(1, prey.size // 3)
-                    hunter.grow(growth_amount, reason="ate snake")
-                    prey.die(reason="eaten by hunter")
                     break  # Hunter can only eat one snake per frame
     
     def spawn_food(self):
@@ -190,10 +203,11 @@ class GameManager:
             max(0, min(255, base_color[0] + color_variation[0])),
             max(0, min(255, base_color[1] + color_variation[1])),
             max(0, min(255, base_color[2] + color_variation[2]))
-        )
-
-        # Create and add the snake
+        )        # Create and add the snake
         new_snake = Snake(x, y, color)
+          # TEMPORARY: Give new snakes some damage so we can see health bars immediately
+        new_snake.take_damage(2, "spawn_test")  # Take only 2 damage so HP = 8/10
+        print(f"New snake spawned with {new_snake.hp}/{new_snake.max_hp} HP for health bar testing")
 
         # Give random initial direction
         direction = Vector2(
@@ -221,8 +235,7 @@ class GameManager:
         """Print performance statistics to console"""
         stats = self.resource_manager.get_performance_stats()
         creature_counts = self.creature_manager.get_creature_counts()
-        effect_counts = self.effects_manager.get_effect_counts()
-        
+        effect_counts = self.effects_manager.get_effect_counts()        
         print(f"FPS: {stats.get('fps', 0):.1f}, "
               f"Snakes: {len([s for s in self.snakes if not s.is_dead])}, "
               f"Food: {len(self.food_items)}, "
@@ -231,6 +244,7 @@ class GameManager:
               f"BlackHoles: {effect_counts.get('black_holes', 0)}, "
               f"SpeedZones: {effect_counts.get('speed_zones', 0)}, "
               f"FoodMagnets: {effect_counts.get('food_magnets', 0)}, "
+              f"PoisonZones: {effect_counts.get('poison_zones', 0)}, "
               f"Update: {stats.get('update_time_ms', 0):.1f}ms")
 
     def draw(self, screen):
@@ -250,5 +264,12 @@ class GameManager:
         
         # Draw environmental effects
         self.effects_manager.draw(screen)
+          # Draw enhanced UI with survival statistics
+        game_stats = self.ui_manager.get_game_stats(self.snakes, self.food_items, self.effects_manager)
+        self.ui_manager.draw_enhanced_hud(screen, game_stats)
+        
+        # Draw enhanced snake info for critical snakes
+        for snake in self.snakes:
+            self.ui_manager.draw_enhanced_snake_info(screen, snake)
         
         self.resource_manager.mark_draw_complete()

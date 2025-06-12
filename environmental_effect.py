@@ -1,9 +1,11 @@
 # environmental_effect.py: Base class for environmental effects
 import pygame
+import random
 from pygame.math import Vector2
 from settings import *
 import time
 import uuid
+import random
 
 class EnvironmentalEffect:
     """Base class for all environmental effects"""
@@ -339,3 +341,204 @@ class FoodMagnetEffect(EnvironmentalEffect):
             pygame.draw.circle(screen, (255, 255, 150), 
                              (int(self.position.x), int(self.position.y)), 
                              inner_radius)
+
+class PoisonZoneEffect(EnvironmentalEffect):
+    """Poison zone that damages entities and drifts with wind patterns"""
+    
+    def __init__(self, x, y):
+        super().__init__(x, y, POISON_ZONE_LIFETIME)
+        self.effect_type = "poison_zone"
+        self.radius = POISON_ZONE_RADIUS
+        self.damage_rate = POISON_ZONE_DAMAGE_RATE
+        self.lingering_duration = POISON_ZONE_LINGERING_DURATION
+        
+        # Wind movement system
+        self.wind_direction = Vector2(
+            random.uniform(-1, 1),
+            random.uniform(-1, 1)
+        ).normalize() if random.random() > 0 else Vector2(1, 0)
+        self.wind_speed = POISON_ZONE_WIND_SPEED
+        
+        # Visual effects
+        self.pulse_phase = 0.0
+        self.swirl_rotation = 0.0
+        
+        # Damage tracking for entities
+        self.entities_inside = set()  # Track which entities are currently inside
+        self.lingering_poison = {}  # Track entities with lingering poison effects
+        
+    def update(self, snakes, food_items, creatures):
+        """Update poison zone, handle movement, and apply damage"""
+        super().update(snakes, food_items, creatures)
+        
+        if not self.is_active:
+            return
+        
+        # Update visual effects
+        self.pulse_phase += POISON_ZONE_PULSE_SPEED
+        self.swirl_rotation += 2.0  # Rotation speed for swirling effect
+        
+        # Drift with wind patterns
+        wind_movement = self.wind_direction * self.wind_speed * (1/60)  # Assume 60 FPS
+        self.position += wind_movement
+        
+        # Handle screen wrapping for poison zones
+        if self.position.x < -self.radius:
+            self.position.x = SCREEN_WIDTH + self.radius
+        elif self.position.x > SCREEN_WIDTH + self.radius:
+            self.position.x = -self.radius
+        if self.position.y < -self.radius:
+            self.position.y = SCREEN_HEIGHT + self.radius
+        elif self.position.y > SCREEN_HEIGHT + self.radius:
+            self.position.y = -self.radius
+        
+        # Collect all entities to check
+        all_entities = []
+        for snake in snakes:
+            if not snake.is_dead:
+                all_entities.append(snake)
+        
+        # Add creatures if available
+        if hasattr(creatures, 'get_all_creatures'):
+            all_entities.extend(creatures.get_all_creatures())
+        elif hasattr(creatures, 'rippers'):
+            all_entities.extend(creatures.rippers)
+        elif hasattr(creatures, 'scavengers'):
+            all_entities.extend(creatures.scavengers)
+        
+        # Track which entities are currently inside
+        currently_inside = set()
+        
+        for entity in all_entities:
+            if hasattr(entity, 'is_dead') and entity.is_dead:
+                continue
+                
+            entity_pos = entity.head_position if hasattr(entity, 'head_position') else entity.position
+            distance = (self.position - entity_pos).length()
+            
+            if distance < self.radius:
+                currently_inside.add(entity.id if hasattr(entity, 'id') else id(entity))
+                self._apply_poison_damage(entity)
+            else:
+                # Check if entity just left the zone
+                entity_id = entity.id if hasattr(entity, 'id') else id(entity)
+                if entity_id in self.entities_inside:
+                    self._start_lingering_poison(entity)
+        
+        # Update entities_inside set
+        self.entities_inside = currently_inside
+        
+        # Update lingering poison effects
+        self._update_lingering_poison(all_entities)
+    
+    def _apply_poison_damage(self, entity):
+        """Apply poison damage to entity inside the zone"""
+        if hasattr(entity, 'apply_environmental_damage'):
+            # Apply damage at the specified rate (assuming 60 FPS)
+            damage_per_frame = self.damage_rate / 30.0
+            entity.apply_environmental_damage("poison", damage_per_frame)
+    
+    def _start_lingering_poison(self, entity):
+        """Start lingering poison effect when entity leaves the zone"""
+        entity_id = entity.id if hasattr(entity, 'id') else id(entity)
+        self.lingering_poison[entity_id] = {
+            'entity': entity,
+            'start_time': time.time(),
+            'duration': self.lingering_duration
+        }
+    
+    def _update_lingering_poison(self, all_entities):
+        """Update lingering poison effects on entities that left the zone"""
+        current_time = time.time()
+        expired_entities = []
+        
+        for entity_id, poison_data in self.lingering_poison.items():
+            entity = poison_data['entity']
+            elapsed_time = current_time - poison_data['start_time']
+            
+            if elapsed_time >= poison_data['duration']:
+                expired_entities.append(entity_id)
+            elif hasattr(entity, 'apply_environmental_damage') and not (hasattr(entity, 'is_dead') and entity.is_dead):
+                # Apply reduced lingering damage
+                lingering_damage_per_frame = (self.damage_rate * 0.5) / 45.0  # Half damage while lingering
+                entity.apply_environmental_damage("poison", lingering_damage_per_frame)
+        
+        # Remove expired lingering effects
+        for entity_id in expired_entities:
+            del self.lingering_poison[entity_id]
+    
+    def draw(self, screen):
+        """Draw the poison zone with swirling toxic visual effects"""
+        if not self.is_active:
+            return
+        
+        import math
+        import random
+        
+        # Calculate age-based effects
+        age = time.time() - self.creation_time
+        age_factor = max(0, 1.0 - age / self.lifetime)
+        
+        # Pulsing effect
+        pulse = 0.7 + 0.3 * math.sin(self.pulse_phase)
+        
+        # Base colors for poison zone (purple-green toxic)
+        base_color = (100 + int(50 * pulse), 200 + int(55 * pulse), 100 + int(30 * pulse))
+        warning_color = (150, 255, 150)
+        
+        # Draw warning border (larger radius)
+        warning_radius = int(self.radius + 15)
+        warning_alpha = int(60 * age_factor * pulse)
+        warning_surface = pygame.Surface((warning_radius * 2, warning_radius * 2), pygame.SRCALPHA)
+        warning_zone_color = (*warning_color, warning_alpha)
+        pygame.draw.circle(warning_surface, warning_zone_color, 
+                          (warning_radius, warning_radius), warning_radius, 4)
+        screen.blit(warning_surface, 
+                   (self.position.x - warning_radius, self.position.y - warning_radius))
+        
+        # Draw main poison zone with swirling effect
+        zone_alpha = int(120 * age_factor * pulse)
+        zone_surface = pygame.Surface((self.radius * 2, self.radius * 2), pygame.SRCALPHA)
+        
+        # Create swirling pattern
+        for ring in range(3):
+            ring_radius = int(self.radius * (0.3 + ring * 0.3))
+            ring_alpha = zone_alpha // (ring + 1)
+            ring_color = (*base_color, ring_alpha)
+            
+            # Rotate each ring at different speeds
+            rotation_offset = self.swirl_rotation * (ring + 1) * 0.5
+            
+            # Draw swirl segments
+            for segment in range(8):
+                angle = (segment * 45 + rotation_offset) % 360
+                start_angle = math.radians(angle)
+                end_angle = math.radians(angle + 30)
+                
+                # Calculate arc points (simplified as polygon)
+                points = []
+                center = (self.radius, self.radius)
+                for i in range(5):
+                    interpolated_angle = start_angle + (end_angle - start_angle) * (i / 4)
+                    x = center[0] + ring_radius * math.cos(interpolated_angle)
+                    y = center[1] + ring_radius * math.sin(interpolated_angle)
+                    points.append((x, y))
+                
+                if len(points) >= 3:
+                    pygame.draw.polygon(zone_surface, ring_color, points)
+        
+        screen.blit(zone_surface, 
+                   (self.position.x - self.radius, self.position.y - self.radius))
+        
+        # Draw toxic particles around the zone
+        for i in range(6):
+            particle_angle = (time.time() * 50 + i * 60) % 360
+            particle_distance = self.radius + 10 + 15 * math.sin(time.time() * 3 + i)
+            particle_x = self.position.x + particle_distance * math.cos(math.radians(particle_angle))
+            particle_y = self.position.y + particle_distance * math.sin(math.radians(particle_angle))
+            
+            particle_alpha = int(100 * age_factor * pulse)
+            particle_color = (80, 255, 120, particle_alpha)
+            particle_surface = pygame.Surface((6, 6), pygame.SRCALPHA)
+            pygame.draw.circle(particle_surface, particle_color, (3, 3), 3)
+            screen.blit(particle_surface, (particle_x - 3, particle_y - 3))

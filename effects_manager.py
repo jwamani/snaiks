@@ -6,16 +6,16 @@ from pygame.math import Vector2
 
 # Import effect classes conditionally based on settings
 if ENABLE_EFFECTS:
-    from environmental_effect import BlackHoleEffect, SpeedZoneEffect, FoodMagnetEffect
+    from environmental_effect import BlackHoleEffect, SpeedZoneEffect, FoodMagnetEffect, PoisonZoneEffect
 
 class EffectsManager:
     """Manages all environmental effects in the game"""
     
-    def __init__(self, sound_manager=None):
-        # Effect lists - always initialize as lists, but only populate if enabled
+    def __init__(self, sound_manager=None):        # Effect lists - always initialize as lists, but only populate if enabled
         self.black_holes = []
         self.speed_zones = []
         self.food_magnets = []
+        self.poison_zones = []
         
         # Sound manager for playing effect sounds
         self.sound_manager = sound_manager
@@ -24,13 +24,14 @@ class EffectsManager:
         self.last_black_hole_spawn_time = time.time()
         self.last_speed_zone_spawn_time = time.time()
         self.last_food_magnet_spawn_time = time.time()
-        
+        self.last_poison_zone_spawn_time = time.time()
         print(f"EffectsManager initialized:")
         print(f"  - Environmental Effects: {'Enabled' if ENABLE_EFFECTS else 'Disabled'}")
         if ENABLE_EFFECTS:
             print(f"  - Black Holes: {'Enabled' if ENABLE_BLACK_HOLES else 'Disabled'}")
             print(f"  - Speed Zones: {'Enabled' if ENABLE_SPEED_ZONES else 'Disabled'}")
             print(f"  - Food Magnets: {'Enabled' if ENABLE_FOOD_MAGNETS else 'Disabled'}")
+            print(f"  - Poison Zones: {'Enabled' if ENABLE_POISON_ZONES else 'Disabled'}")
 
     def update(self, snakes, food_items, creatures):
         """Update all active environmental effects"""
@@ -46,10 +47,13 @@ class EffectsManager:
         # Update speed zones if enabled
         if ENABLE_SPEED_ZONES:
             self._update_speed_zones(snakes, food_items, creatures, current_time)
-        
-        # Update food magnets if enabled
+          # Update food magnets if enabled
         if ENABLE_FOOD_MAGNETS:
             self._update_food_magnets(snakes, food_items, creatures, current_time)
+        
+        # Update poison zones if enabled
+        if ENABLE_POISON_ZONES:
+            self._update_poison_zones(snakes, food_items, creatures, current_time)
 
     def _update_black_holes(self, snakes, food_items, creatures, current_time):
         """Update black hole effects"""
@@ -57,14 +61,10 @@ class EffectsManager:
         if (len(self.black_holes) < MAX_BLACK_HOLES and 
             current_time - self.last_black_hole_spawn_time > BLACK_HOLE_SPAWN_INTERVAL):
             self._spawn_black_hole()
-            self.last_black_hole_spawn_time = current_time
-          # Update existing black holes and remove expired ones
+            self.last_black_hole_spawn_time = current_time          # Update existing black holes and remove expired ones
         for black_hole in self.black_holes[:]:
             if black_hole.is_expired():
                 self.black_holes.remove(black_hole)
-                # Play effect expiration sound
-                if self.sound_manager:
-                    self.sound_manager.play_effect_expire_sound()
                 print(f"Black hole {black_hole.id} expired")
             else:
                 black_hole.update(snakes, food_items, creatures)
@@ -79,12 +79,8 @@ class EffectsManager:
           # Update existing speed zones and remove expired ones
         for speed_zone in self.speed_zones[:]:
             if speed_zone.is_expired():
-                # Restore original speeds for affected entities
-                self._restore_entity_speeds(snakes, creatures)
+                # Restore original speeds for affected entities                self._restore_entity_speeds(snakes, creatures)
                 self.speed_zones.remove(speed_zone)
-                # Play effect expiration sound
-                if self.sound_manager:
-                    self.sound_manager.play_effect_expire_sound()
                 print(f"Speed zone {speed_zone.id} expired")
             else:
                 speed_zone.update(snakes, food_items, creatures)
@@ -95,17 +91,29 @@ class EffectsManager:
         if (len(self.food_magnets) < MAX_FOOD_MAGNETS and 
             current_time - self.last_food_magnet_spawn_time > FOOD_MAGNET_SPAWN_INTERVAL):
             self._spawn_food_magnet()
-            self.last_food_magnet_spawn_time = current_time
-          # Update existing food magnets and remove expired ones
+            self.last_food_magnet_spawn_time = current_time        # Update existing food magnets and remove expired ones
         for food_magnet in self.food_magnets[:]:
             if food_magnet.is_expired():
                 self.food_magnets.remove(food_magnet)
-                # Play effect expiration sound
-                if self.sound_manager:
-                    self.sound_manager.play_effect_expire_sound()
                 print(f"Food magnet {food_magnet.id} expired")
             else:
                 food_magnet.update(snakes, food_items, creatures)
+
+    def _update_poison_zones(self, snakes, food_items, creatures, current_time):
+        """Update poison zone effects"""
+        # Spawn new poison zones periodically
+        if (len(self.poison_zones) < MAX_POISON_ZONES and 
+            current_time - self.last_poison_zone_spawn_time > POISON_ZONE_SPAWN_INTERVAL):
+            self._spawn_poison_zone()
+            self.last_poison_zone_spawn_time = current_time
+        
+        # Update existing poison zones and remove expired ones
+        for poison_zone in self.poison_zones[:]:
+            if poison_zone.is_expired():
+                self.poison_zones.remove(poison_zone)
+                print(f"Poison zone {poison_zone.id} expired")
+            else:
+                poison_zone.update(snakes, food_items, creatures)
 
     def _spawn_black_hole(self):
         """Spawn a new black hole at a valid position"""
@@ -143,13 +151,10 @@ class EffectsManager:
         # Generate random spawn position
         x = random.randint(SPEED_ZONE_RADIUS + 30, SCREEN_WIDTH - SPEED_ZONE_RADIUS - 30)
         y = random.randint(SPEED_ZONE_RADIUS + 30, SCREEN_HEIGHT - SPEED_ZONE_RADIUS - 30)
-        
-        # Randomly choose between fast and slow zone
+          # Randomly choose between fast and slow zone
         is_fast_zone = random.choice([True, False])
         new_speed_zone = SpeedZoneEffect(x, y, is_fast_zone)
-        self.speed_zones.append(new_speed_zone)        # Play zone spawn sound
-        if self.sound_manager:
-            self.sound_manager.play_speed_zone_spawn_sound()
+        self.speed_zones.append(new_speed_zone)
         zone_type = "speed boost" if is_fast_zone else "slow"
         print(f"Speed zone {new_speed_zone.id} ({zone_type}) spawned at ({x}, {y})")
 
@@ -163,10 +168,31 @@ class EffectsManager:
         y = random.randint(FOOD_MAGNET_RADIUS + 40, SCREEN_HEIGHT - FOOD_MAGNET_RADIUS - 40)
         new_food_magnet = FoodMagnetEffect(x, y)
         self.food_magnets.append(new_food_magnet)
-        # Play food magnet spawn sound
-        if self.sound_manager:
-            self.sound_manager.play_food_magnet_attract_sound()
         print(f"Food magnet {new_food_magnet.id} spawned at ({x}, {y})")
+
+    def _spawn_poison_zone(self):
+        """Spawn a new poison zone at a random position"""
+        if not ENABLE_EFFECTS or not ENABLE_POISON_ZONES:
+            return
+            
+        # Generate random spawn position avoiding edges
+        x = random.randint(POISON_ZONE_RADIUS + 50, SCREEN_WIDTH - POISON_ZONE_RADIUS - 50)
+        y = random.randint(POISON_ZONE_RADIUS + 50, SCREEN_HEIGHT - POISON_ZONE_RADIUS - 50)
+        
+        # Check if position is valid (not too close to other poison zones)
+        position_valid = True
+        for existing_zone in self.poison_zones:
+            distance = (Vector2(x, y) - existing_zone.position).length()
+            if distance < POISON_ZONE_RADIUS * 2.5:  # Minimum distance between zones
+                position_valid = False
+                break
+        
+        if position_valid:
+            new_poison_zone = PoisonZoneEffect(x, y)
+            self.poison_zones.append(new_poison_zone)
+            print(f"Poison zone {new_poison_zone.id} spawned at ({x}, {y})")
+        else:
+            print("Failed to spawn poison zone - too close to existing zone")
 
     def _restore_entity_speeds(self, snakes, creatures):
         """Restore original speeds for all entities when speed zones expire"""
@@ -200,12 +226,15 @@ class EffectsManager:
         if ENABLE_SPEED_ZONES:
             for speed_zone in self.speed_zones:
                 speed_zone.draw(screen)
-        
-        # Draw food magnets
+          # Draw food magnets
         if ENABLE_FOOD_MAGNETS:
             for food_magnet in self.food_magnets:
                 food_magnet.draw(screen)
-
+        
+        # Draw poison zones
+        if ENABLE_POISON_ZONES:
+            for poison_zone in self.poison_zones:
+                poison_zone.draw(screen)    
     def get_effect_counts(self):
         """Get counts of all active effects for stats"""
         counts = {}
@@ -214,17 +243,18 @@ class EffectsManager:
             counts['black_holes'] = len([bh for bh in self.black_holes if bh.is_active])
             counts['speed_zones'] = len([sz for sz in self.speed_zones if sz.is_active])
             counts['food_magnets'] = len([fm for fm in self.food_magnets if fm.is_active])
+            counts['poison_zones'] = len([pz for pz in self.poison_zones if pz.is_active])
         else:
             counts['black_holes'] = 0
             counts['speed_zones'] = 0
             counts['food_magnets'] = 0
+            counts['poison_zones'] = 0
             
         return counts
 
     def get_all_effects(self):
         """Get all effect instances for external processing"""
         effects = []
-        
         if ENABLE_EFFECTS:
             if ENABLE_BLACK_HOLES:
                 effects.extend(self.black_holes)
@@ -232,14 +262,17 @@ class EffectsManager:
                 effects.extend(self.speed_zones)
             if ENABLE_FOOD_MAGNETS:
                 effects.extend(self.food_magnets)
+            if ENABLE_POISON_ZONES:
+                effects.extend(self.poison_zones)
                 
         return effects
 
     def clear_all_effects(self):
-        """Clear all active effects (useful for cleanup or reset)"""
+        """Clear all active effects (useful for cleanup or reset)"""        
         self.black_holes.clear()
         self.speed_zones.clear()
         self.food_magnets.clear()
+        self.poison_zones.clear()
         print("All environmental effects cleared")
 
     def force_spawn_effect(self, effect_type, x=None, y=None):
@@ -266,5 +299,9 @@ class EffectsManager:
             new_effect = FoodMagnetEffect(x, y)
             self.food_magnets.append(new_effect)
             print(f"Force spawned food magnet at ({x}, {y})")
+        elif effect_type == "poison_zone" and ENABLE_POISON_ZONES:
+            new_effect = PoisonZoneEffect(x, y)
+            self.poison_zones.append(new_effect)
+            print(f"Force spawned poison zone at ({x}, {y})")
         else:
             print(f"Cannot spawn effect type '{effect_type}' - disabled or invalid")

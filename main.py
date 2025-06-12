@@ -13,23 +13,14 @@ def main():
 
     game_manager = GameManager()
 
-    # Start ambient background sound
-    import time
-    last_ambient_time = time.time()
-    ambient_interval = 5.0  # Play ambient sound every 5 seconds
-
-    running = True
+    running = True    
     while running:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
-                running = False        # Game logic updates
-        game_manager.update()
+                running = False
 
-        # Play ambient sound periodically
-        current_time = time.time()
-        if current_time - last_ambient_time >= ambient_interval:
-            game_manager.sound_manager.play_ambient_sound()
-            last_ambient_time = current_time
+        # Game logic updates
+        game_manager.update()
 
         # Drawing
         screen.fill(BG_COLOR)
