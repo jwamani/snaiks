@@ -305,3 +305,31 @@ class EffectsManager:
             print(f"Force spawned poison zone at ({x}, {y})")
         else:
             print(f"Cannot spawn effect type '{effect_type}' - disabled or invalid")
+    def draw_arcade(self, arcade_window):
+        """Draw all environmental effects using Arcade graphics"""
+        if not ENABLE_EFFECTS:
+            return
+            
+        # Draw black holes with enhanced visual effects
+        if ENABLE_BLACK_HOLES:
+            for black_hole in self.black_holes:
+                if black_hole.is_active:
+                    black_hole.draw_arcade(arcade_window)
+        
+        # Draw speed zones with particle effects
+        if ENABLE_SPEED_ZONES:
+            for speed_zone in self.speed_zones:
+                if speed_zone.is_active:
+                    speed_zone.draw_arcade(arcade_window)
+        
+        # Draw food magnets with attraction visualization
+        if ENABLE_FOOD_MAGNETS:
+            for food_magnet in self.food_magnets:
+                if food_magnet.is_active:
+                    food_magnet.draw_arcade(arcade_window)
+        
+        # Draw poison zones with particle systems
+        if ENABLE_POISON_ZONES:
+            for poison_zone in self.poison_zones:
+                if poison_zone.is_active:
+                    poison_zone.draw_arcade(arcade_window)

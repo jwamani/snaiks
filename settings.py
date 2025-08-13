@@ -5,15 +5,15 @@ SCREEN_WIDTH = 1400  # Enlarged to accommodate enhanced UI panel
 SCREEN_HEIGHT = 850  # Increased height for better visibility
 
 # Colors
-BG_COLOR = (20, 30, 40) # Dark grayish blue
-FOOD_COLOR = (255, 100, 100) # Light red
+BG_COLOR = (20, 30, 40)  # Dark grayish blue
+FOOD_COLOR = (255, 100, 100)  # Light red
 
 # Snake Color Schemes
 NORMAL_SNAKE_BODY_COLOR = (50, 200, 50)  # Green
 NORMAL_SNAKE_HEAD_COLOR = (70, 220, 70)  # Lighter Green
 HUNTER_SNAKE_BODY_COLOR = (200, 50, 50)  # Red
 HUNTER_SNAKE_HEAD_COLOR = (220, 70, 70)  # Lighter Red
-DEAD_SNAKE_COLOR = (100, 100, 100) # Grey for when they die (optional visual)
+DEAD_SNAKE_COLOR = (100, 100, 100)  # Grey for when they die (optional visual)
 
 # Game mechanics
 FPS = 60
@@ -22,31 +22,31 @@ WALL_BEHAVIOR = "wraparound"  # "wraparound" or "destructive"
 # Food
 FOOD_RADIUS = 7
 MAX_FOOD_ON_SCREEN = 15
-FOOD_SPAWN_INTERVAL = 0.5 # seconds
+FOOD_SPAWN_INTERVAL = 0.5  # seconds
 
 # Snake properties
 INITIAL_SNAKE_LENGTH = 3
 SNAKE_SEGMENT_RADIUS = 8
 # Speed and acceleration will be dynamic, these are base values
 BASE_MAX_SPEED = 5.0  # Pixels per frame
-BASE_ACCELERATION = 0.2 # Pixels per frame^2
+BASE_ACCELERATION = 0.2  # Pixels per frame^2
 # Factor by which speed/acceleration decreases with size.
 # e.g. max_speed = BASE_MAX_SPEED / (1 + size * SIZE_SPEED_PENALTY_FACTOR)
 SIZE_SPEED_PENALTY_FACTOR = 0.0
 SIZE_ACCEL_PENALTY_FACTOR = 0.0
 
-SNAKE_SPAWN_INTERVAL_MIN = 2 # seconds
-SNAKE_SPAWN_INTERVAL_MAX = 2 # seconds
-MAX_SNAKES_ON_SCREEN = 20 # Initial limit, can be adjusted
+SNAKE_SPAWN_INTERVAL_MIN = 2  # seconds
+SNAKE_SPAWN_INTERVAL_MAX = 2  # seconds
+MAX_SNAKES_ON_SCREEN = 20  # Initial limit, can be adjusted
 
 FOOD_TO_BECOME_HUNTER = 10
-WINNING_SIZE = 50 # Example size to win
+WINNING_SIZE = 50  # Example size to win
 
 # AI Behavior Constants
 FEAR_MARGIN = 5  # Segments larger a hunter must be to induce fear
-WALL_AVOIDANCE_DISTANCE = SNAKE_SEGMENT_RADIUS * 4 # How far to "see" walls
-THREAT_AVOIDANCE_DISTANCE = SNAKE_SEGMENT_RADIUS * 10 # How far to "see" threats
-PROACTIVE_AVOIDANCE_STRENGTH = 0.5 # How strongly to steer away
+WALL_AVOIDANCE_DISTANCE = SNAKE_SEGMENT_RADIUS * 4  # How far to "see" walls
+THREAT_AVOIDANCE_DISTANCE = SNAKE_SEGMENT_RADIUS * 10  # How far to "see" threats
+PROACTIVE_AVOIDANCE_STRENGTH = 0.5  # How strongly to steer away
 
 # ===== CREATURE SYSTEM =====
 # Enable/Disable switches for different creatures
@@ -58,7 +58,9 @@ ENABLE_GUARDIANS = False  # Enable Guardian entities (future creature)
 MAX_RIPPERS_ON_SCREEN = 3  # Maximum number of rippers allowed
 RIPPER_SPAWN_INTERVAL = 5.0  # Seconds between ripper spawn checks
 HUNTER_POPULATION_THRESHOLD = 0.5  # 50% hunters triggers ripper spawning
-RIPPER_DESPAWN_DELAY = 10.0  # Seconds before ripper despawns when hunter population drops
+RIPPER_DESPAWN_DELAY = (
+    10.0  # Seconds before ripper despawns when hunter population drops
+)
 
 # Scavenger Entity Settings
 MAX_SCAVENGERS_ON_SCREEN = 2  # Maximum number of scavengers allowed
@@ -117,7 +119,7 @@ POISON_ZONE_PULSE_SPEED = 0.1  # Visual pulsing animation speed
 # Enable/Disable switches for different food types
 ENABLE_SPECIAL_FOOD = True  # Master switch for special food types
 ENABLE_SPEED_FOOD = True  # Enable speed boost food
-ENABLE_SLOW_FOOD = True  # Enable speed reduction food  
+ENABLE_SLOW_FOOD = True  # Enable speed reduction food
 ENABLE_IMMUNITY_FOOD = True  # Enable temporary immunity food
 ENABLE_GROWTH_FOOD = True  # Enable instant growth food
 ENABLE_SHRINK_FOOD = True  # Enable shrinking food
@@ -132,7 +134,7 @@ SPEED_FOOD_BOOST_MULTIPLIER = 2.5  # Speed multiplier
 SPEED_FOOD_ACCEL_MULTIPLIER = 3.0  # Acceleration multiplier
 SPEED_FOOD_DURATION = 6.0  # Effect duration
 
-# Slow Food Settings  
+# Slow Food Settings
 SLOW_FOOD_COLOR = (128, 0, 128)  # Purple
 SLOW_FOOD_REDUCTION_MULTIPLIER = 0.4  # Speed reduction multiplier
 SLOW_FOOD_DURATION = 10.0  # Effect duration
@@ -151,6 +153,16 @@ SHRINK_FOOD_COLOR = (255, 20, 147)  # Deep pink
 SHRINK_FOOD_SIZE_REDUCTION = 2  # Size reduction amount
 SHRINK_FOOD_MIN_SIZE = 2  # Minimum size after shrinking
 
+# Energy Food Settings
+ENABLE_ENERGY_FOOD = True  # Enable energy restoration food
+ENERGY_FOOD_COLOR = (0, 200, 255)  # Bright blue
+ENERGY_FOOD_RESTORATION = 20  # Energy points restored
+
+# Health Food Settings
+ENABLE_HEALTH_FOOD = True  # Enable health restoration food
+HEALTH_FOOD_COLOR = (255, 215, 0)  # Golden
+HEALTH_FOOD_RESTORATION = 3  # HP restored
+
 # ===== SOUND EFFECTS SYSTEM =====
 # Enable/Disable sound effects
 ENABLE_SOUND_EFFECTS = True  # Master switch for all sound effects
@@ -161,4 +173,3 @@ FOOD_SOUND_VOLUME = 0.3  # Volume for food eating sounds
 DEATH_SOUND_VOLUME = 0.4  # Volume for death sounds
 EFFECT_SOUND_VOLUME = 0.3  # Volume for environmental effect sounds
 CREATURE_SOUND_VOLUME = 0.4  # Volume for creature sounds
-

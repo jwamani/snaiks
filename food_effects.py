@@ -119,8 +119,14 @@ class FoodEffectsManager:
             snake.grow(GROWTH_FOOD_SIZE_BONUS, reason="ate growth food")
             print(f"Snake {snake_id} grew by {GROWTH_FOOD_SIZE_BONUS} segments from growth food!")
             return
+        elif food_type == "energy" and ENABLE_ENERGY_FOOD:
+            # Instant energy restoration - no duration needed
+            if hasattr(snake, 'energy'):
+                energy_restored = snake.consume_energy_food()
+                print(f"Snake {snake_id} restored {energy_restored} energy! Current energy: {snake.energy.current_energy:.1f}/{snake.energy.max_energy}")
+            return
             
-        elif food_type == "health":
+        elif food_type == "health" and ENABLE_HEALTH_FOOD:
             # Instant healing effect - no duration needed  
             healing_amount = snake.consume_health_food()
             print(f"Snake {snake_id} healed for {healing_amount} HP! Current HP: {snake.hp}/{snake.max_hp}")
